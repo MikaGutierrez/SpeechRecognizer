@@ -1,0 +1,194 @@
+For the application to work, it is important that the google application is on the phone
+
+Also, to recognize that the phone is recording what you say, in app/src/main/res/drawable add two png files 
+called micro.png and not_micro.png. You can draw or find them yourself or take mine.
+==== In java file ====
+
+
+To begin with, there must be created
+
+/*
+    EditText editText;
+    ImageButton button;
+    SpeechRecognizer speechRecognizer;
+*/
+
+Replace
+
+/*
+@Override
+protected void onCreate(Bundle savedInstanceState)
+*/
+to
+/*
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        setupUI();
+        checkPermission();
+        if (SpeechRecognizer.isRecognitionAvailable(this)) { // important that the google application is on the phone
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+            Log.d("RRR", SpeechRecognizer.isRecognitionAvailable(this) + "");
+            Intent speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            speechRecognizer.setRecognitionListener(new RecognitionListener());
+            speechbutton.setOnTouchListener((view, event) -> {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN: // pressed the button
+                        speechbutton.setImageDrawable(getDrawable(R.drawable.micro));//changes the image of button to micro.png
+                        speechRecognizer.startListening(speechRecognizerIntent);//Starts to record
+                        return true;
+
+                    case MotionEvent.ACTION_UP: // take your finger off the button
+                        speechbutton.setImageDrawable(getDrawable(R.drawable.not_micro));;//changes the image of button to not_micro.png
+                        speechRecognizer.stopListening();//Stop to record
+                        return true;
+                }
+                return false;
+            });
+        }
+
+
+    }
+*/
+After you need to add to
+/*
+private void setupUI(){}
+*/
+this code: 
+/*
+        editText = findViewById(R.id.text); //assigns the previously created data type the parameters entered in the test field
+        speechbutton = findViewById(R.id.speechbutton); //speechbutton accepts button values ​​with id speechbutton
+*/
+Also add class:
+/*
+    private void checkPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
+    }
+*/
+Then add this class:
+/*
+    class RecognitionListener implements android.speech.RecognitionListener { //Helps to reproduce some code depending on situations
+
+        @Override
+        public void onReadyForSpeech(Bundle bundle) {//Fires when the phone is recording sound
+
+        }
+
+        @Override
+        public void onBeginningOfSpeech() {//Works when the phone recognizes sounds. If the surrounding area is quiet when the button is pressed, the code will not work.
+
+        }
+
+        @Override
+        public void onRmsChanged(float v) {//Works when the rms value change. The v parameter is responsible for rms
+        }
+
+        @Override
+        public void onBufferReceived(byte[] bytes) {
+
+        }
+
+        @Override
+        public void onEndOfSpeech() {//Fires when the phone stops recording sound
+
+        }
+
+        @Override
+        public void onError(int i) {//Fires when an error occurs. The i parameter shows the id of the error
+        }
+
+
+        @Override
+        public void onResults(Bundle bundle) {//Fires when results can be returned as text. The result in the form of a string can be obtained thanks to bundle.getStringArrayList(speechRecognizer.RESULTS_RECOGNITION).toString()
+        }
+
+        @Override
+        public void onPartialResults(Bundle bundle) {
+
+        }
+
+        @Override
+        public void onEvent(int i, Bundle bundle) {
+
+        }
+    }
+}
+*/
+
+So that everything works in
+/*
+        public void onResults(Bundle bundle){}
+*/
+paste code:
+/*
+            ArrayList<String> data = bundle.getStringArrayList(speechRecognizer.RESULTS_RECOGNITION); //data - takes the value of the spoken text
+            editText.setText(data.get(0));//Changes the text parameter of the editText variable (which is associated with the text editor with id text in the setupUI class) to the value in data
+*/
+You can also add log to the onError class
+/*
+Log.e("onError", i + "");
+*/
+So that when an error occurs, you know what the problem is by its id
+==== In axml file ====
+You just need to add EditText with id text and ImageButton with id speechbutton and
+ parameter android:src="@drawable/not_micro"
+==== Manifest ====
+Do not forget to write this to the main monitor:
+
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
+
+This allows you to give permission to the program to record sound.
+
+==== Errors ====
+If you added Log.e("onError", i + ""); as mentioned above, when an error occurs, 
+the audio i associated with the recording will take on the values ​​of the error id.
+
+Here is the id and these error values:
+
+==id:3             Value:Audio recording error.==
+Explanation:This means that the device cannot record sound. As a rule, 
+this error appears when running the program on the emulator, so to 
+check if the program works, you need to use a real device for tests.
+
+==id:5             Value:Other client side errors.==
+Explanation:This means that the error is most likely not related to
+the program and is a device problem. Usually occurs when trying to
+record sound on the emulator
+
+==id:9             Value:Insufficient permissions.==
+Explanation:Means that the program does not have enough permissions 
+to use sound recording. As a rule, it occurs if you did not register
+permission in manifest. 
+The above shows how to do it.
+
+==id:12            Value:Requested language is not available to be used with the current recognizer.==
+
+==id:13            Value:Requested language is supported, but not available currently (e.g. not downloaded yet).==
+
+==id:2            Value:Other network related errors.==
+Explanation:May occur if the device does not have the google app
+
+==id:1            Value:Network operation timed out.==
+
+==id:7            Value:No recognition result matched.==
+
+==id:8            Value:RecognitionService busy.==
+
+==id:4            Value:Server sends error status.==
+
+==id:11            Value:Server has been disconnected, e.g. because the app has crashed..==
+
+==id:6            Value:No speech input==
+Explanation:May occur when recording is too long
+
+==id:10            Value:Too many requests from the same client.==
